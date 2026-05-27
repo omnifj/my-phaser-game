@@ -18,7 +18,7 @@ export class GameScene extends Phaser.Scene {
 
   init() {
     this.#playerSpeed = 500;
-    this.#fallingObjectSpeed = 500;
+    this.#fallingObjectSpeed = 200;
   }
   /**
    * @public
@@ -32,7 +32,7 @@ export class GameScene extends Phaser.Scene {
 
     // 添加游戏背景和其他元素
     this.add.image(width / 2, height / 2, ASSET_KEYS.BACKGROUND);
-    this.#player = this.add.image(width / 2, height, ASSET_KEYS.JAR).setData(1);
+    this.#player = this.add.image(width / 2, height, ASSET_KEYS.JAR).setDepth(1);
     // this.add
     //   .image(width / 2, height / 2, ASSET_KEYS.OBJECTS, "button2.png")
     //   .setScale(0.75);
@@ -50,7 +50,7 @@ export class GameScene extends Phaser.Scene {
       this.textures.get(ASSET_KEYS.OBJECTS).frames,
     ).filter((frame) => frame !== "__BASE");
 
-    console.log(this.textures.get(ASSET_KEYS.OBJECTS));
+    // console.log(this.textures.get(ASSET_KEYS.OBJECTS));
     this.#spawnFallingObject = () => {
       const randomframe = Phaser.Utils.Array.GetRandom(
         this.#fallingObjectFrames,
@@ -70,6 +70,10 @@ export class GameScene extends Phaser.Scene {
       callback: this.#spawnFallingObject,
       loop: true,
     });
+
+    console.log(this.#player.getBounds());
+
+
   }
 
   update(time: number, delta: number) {
@@ -87,9 +91,22 @@ export class GameScene extends Phaser.Scene {
       this.#player.x = this.scale.width - this.#player.width / 2;
     }
 
-    for(let i = this.#fallingObject.length - 1; i >= 0; i--) {
+    for (let i = this.#fallingObject.length - 1; i >= 0; i--) {
       const obj = this.#fallingObject[i];
       obj.y += this.#fallingObjectSpeed * (delta / 1000);
+
+      const overlapPoints = Phaser.Geom.Intersects.GetRectangleToRectangle(
+        this.#player.getBounds(),
+        obj.getBounds(),
+      );
+
+      if (overlapPoints.length > 0) {
+        obj.destroy();
+        this.#fallingObject.splice(i, 1);
+        console.log("碰撞发生");
+      }
+
+
       if (obj.y > this.scale.height) {
         obj.destroy();
         this.#fallingObject.splice(i, 1);
