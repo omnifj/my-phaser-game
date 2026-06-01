@@ -10,6 +10,8 @@ export class GameScene extends Phaser.Scene {
   #fallingObjectFrames!: string[];
   #fallingObject!: Phaser.GameObjects.Image[];
   #fallingObjectSpeed!: number;
+  #score: number = 0;
+  #scoreTextGameObject!: Phaser.GameObjects.Text;
   constructor() {
     super({
       key: SCENE_KEYS.GAME_SCENE,
@@ -19,6 +21,7 @@ export class GameScene extends Phaser.Scene {
   init() {
     this.#playerSpeed = 500;
     this.#fallingObjectSpeed = 200;
+    this.#score = 0;
   }
   /**
    * @public
@@ -71,8 +74,22 @@ export class GameScene extends Phaser.Scene {
       loop: true,
     });
 
-    console.log(this.#player.getBounds());
+    // console.log(this.#player.getBounds());
 
+    const textConfig = {
+      fontSize: "24px",
+      color: "#043D8C",
+      stroke: "#ffffff",
+      strokeThickness: 6,
+    }
+
+    const scoreTextPrefix = this.add.text(10, 10, "分数:", textConfig);
+    this.#scoreTextGameObject = this.add.text(
+      scoreTextPrefix.x + scoreTextPrefix.width,
+      scoreTextPrefix.y,
+      `${this.#score}`,
+      textConfig,
+    );
 
   }
 
@@ -103,7 +120,9 @@ export class GameScene extends Phaser.Scene {
       if (overlapPoints.length > 0) {
         obj.destroy();
         this.#fallingObject.splice(i, 1);
-        console.log("碰撞发生");
+        this.#score += 10;
+        this.#scoreTextGameObject.setText(`${this.#score}`);
+        // console.log("碰撞发生");
       }
 
 
