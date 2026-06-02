@@ -12,6 +12,12 @@ export class GameScene extends Phaser.Scene {
   #fallingObjectSpeed!: number;
   #score: number = 0;
   #scoreTextGameObject!: Phaser.GameObjects.Text;
+  #misses: number = 0;
+  #maxMisses: number = 5;
+  #isGameOver: boolean = false;
+  #timerEvent!: Phaser.Time.TimerEvent;
+  #livesTextGameObject!: Phaser.GameObjects.Text;
+  #handleGameOver: () => void;
   constructor() {
     super({
       key: SCENE_KEYS.GAME_SCENE,
@@ -22,6 +28,9 @@ export class GameScene extends Phaser.Scene {
     this.#playerSpeed = 500;
     this.#fallingObjectSpeed = 200;
     this.#score = 0;
+    this.#misses = 0;
+    this.#maxMisses = 5;
+    this.#isGameOver = false;
   }
   /**
    * @public
@@ -35,7 +44,9 @@ export class GameScene extends Phaser.Scene {
 
     // 添加游戏背景和其他元素
     this.add.image(width / 2, height / 2, ASSET_KEYS.BACKGROUND);
-    this.#player = this.add.image(width / 2, height, ASSET_KEYS.JAR).setDepth(1);
+    this.#player = this.add
+      .image(width / 2, height, ASSET_KEYS.JAR)
+      .setDepth(1);
     // this.add
     //   .image(width / 2, height / 2, ASSET_KEYS.OBJECTS, "button2.png")
     //   .setScale(0.75);
@@ -68,7 +79,7 @@ export class GameScene extends Phaser.Scene {
     };
     this.#spawnFallingObject();
 
-    this.time.addEvent({
+    this.#timerEvent = this.time.addEvent({
       delay: 1000,
       callback: this.#spawnFallingObject,
       loop: true,
@@ -81,7 +92,7 @@ export class GameScene extends Phaser.Scene {
       color: "#043D8C",
       stroke: "#ffffff",
       strokeThickness: 6,
-    }
+    };
 
     const scoreTextPrefix = this.add.text(10, 10, "分数:", textConfig);
     this.#scoreTextGameObject = this.add.text(
@@ -91,9 +102,20 @@ export class GameScene extends Phaser.Scene {
       textConfig,
     );
 
+    const livesTextPrefix = this.add.text(10, 40, "剩余机会:", textConfig);
+    this.#livesTextGameObject = this.add.text(
+      livesTextPrefix.x + livesTextPrefix.width,
+      livesTextPrefix.y,
+      `${this.#maxMisses - this.#misses}`,
+      textConfig,
+    );
   }
 
   update(time: number, delta: number) {
+    if(this.#isGameOver) {
+      return;
+    }
+
     const moveStep = this.#playerSpeed * (delta / 1000);
 
     if (this.#cursorKeys.left.isDown) {
@@ -122,16 +144,21 @@ export class GameScene extends Phaser.Scene {
         this.#fallingObject.splice(i, 1);
         this.#score += 10;
         this.#scoreTextGameObject.setText(`${this.#score}`);
+        continue;
         // console.log("碰撞发生");
       }
-
 
       if (obj.y > this.scale.height) {
         obj.destroy();
         this.#fallingObject.splice(i, 1);
+        this.#misses += 1;
+        this.#livesTextGameObject.setText(`${this.#maxMisses - this.#misses}`);
       }
     }
-    // this.#spawnFallingObject();
 
+    if (this.#misses >= this.#maxMisses) {
+      this.#handleGameOver();
+    }
+    // this.#spawnFallingObject();
   }
 }
